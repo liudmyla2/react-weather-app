@@ -5,6 +5,7 @@ import "./Weather.css";
 import WeatherIcon from "./WeatherIcon";
 import CurrentLocation from "./CurrentLocation";
 import Search from "./Search";
+import WeatherInfo from "./WeatherInfo";
 import DateUtil from "./DateUtil";
 import Api from "./Api";
 import Forecast from "./Forecast";
