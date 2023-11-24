@@ -1,108 +1,80 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
+import React, { useState } from "react";
 import axios from "axios";
 import "./Weather.css";
-import WeatherIcon from "./WeatherIcon";
-import CurrentLocation from "./CurrentLocation";
-import Search from "./Search";
-import WeatherInfo from "./WeatherInfo";
-import DateUtil from "./DateUtil";
-import Api from "./Api";
-import Forecast from "./Forecast";
 
-export default class Weather extends Component {
-  static propTypes = {
-    city: PropTypes.string.isRequired,
-  };
-
-  state = {
-    city: this.props.city,
-  };
-
-  componentWillMount() {
-    this.refresh(this.state.city);
-  }
-
-  refreshWeatherFromParams(params) {
-    let url = `${Api.url}/data/2.5/weather?appid=${Api.key}&units=metric&${params}`;
-    axios.get(url).then((response) => {
-      this.setState({
-        city: response.data.name,
-        weather: {
-          description: response.data.weather[0].main,
-          icon: response.data.weather[0].icon,
-          precipitation: Math.round(response.data.main.humidity) + "%",
-          temperature: Math.round(response.data.main.temp),
-          time: new DateUtil(new Date(response.data.dt * 1000)).dayTime(),
-          wind: Math.round(response.data.wind.speed) + "km/h",
-        },
-      });
+export default function Weather(props) {
+  const [weatherData, setWeatherData] = useState({ ready: false });
+  function handleResponse(response) {
+    setWeatherData({
+      ready: true,
+      temperature: response.data.main.temp,
+      humidity: response.data.main.humidity,
+      date: "Wednesday 07:00",
+      description: response.data.weather[0].description,
+      iconUrl: "",
+      wind: response.data.wind.speed,
+      city: response.data.name,
     });
   }
 
-  refreshWeatherFromLatitudeAndLongitude = (latitude, longitude) => {
-    this.refreshWeatherFromParams(`lat=${latitude}&lon=${longitude}`);
-  };
-
-  refresh = (city) => {
-    this.refreshWeatherFromParams(`q=${city}`);
-  };
-
-  render() {
-    if (this.state.weather) {
-      return (
-        <div>
-          <div className="clearfix">
-            <Search refresh={this.refresh} />
-            <CurrentLocation
-              refresh={this.refreshWeatherFromLatitudeAndLongitude}
-            />
-          </div>
-
-          <div className="weather-summary">
-            <div className="weather-summary-header">
-              <h1>{this.state.city}</h1>
-              <div className="weather-detail__text">
-                {this.state.weather.time}
-              </div>
-              <div className="weather-detail__text">
-                {this.state.weather.description}
-              </div>
+  if (weatherData.ready) {
+    return (
+      <div className="Weather">
+        <form>
+          <div className="row">
+            <div className="col-9">
+              <input
+                type="search"
+                placeholder="Enter a city..."
+                className="form-control"
+                autoFocus="on"
+              />
             </div>
-
-            <div className="row">
-              <div className="col-sm-6">
-                <div className="clearfix">
-                  <div className="float-left weather-icon">
-                    <WeatherIcon iconName={this.state.weather.icon} />
-                  </div>
-                  <div className="weather-temp weather-temp--today">
-                    {this.state.weather.temperature}
-                  </div>
-                  <div className="weather-unit__text weather-unit__text--today">
-                    °C
-                  </div>
-                </div>
-              </div>
-              <div className="col-sm-6">
-                <div className="weather-detail__text">
-                  Precipitation: {this.state.weather.precipitation}
-                </div>
-                <div className="weather-detail__text">
-                  Wind: {this.state.weather.wind}
-                </div>
+            <div className="col-3">
+              <input
+                type="submit"
+                value="Search"
+                className="btn btn-primary w-100"
+              />
+            </div>
+          </div>
+        </form>
+        <h1>{weatherData.city}</h1>
+        <ul>
+          <li>{weatherData.date}</li>
+          <li className="text-capitalize">{weatherData.description}</li>
+        </ul>
+        <div className="row mt-3">
+          <div className="col-6">
+            <div className="clearfix">
+              <img
+                src={weatherData.iconUrl}
+                alt={weatherData.description}
+                className="float-left"
+              ></img>
+              <div className="float-left">
+                <span className="temperature">
+                  {Math.round(weatherData.temperature)}
+                </span>
+                <span className="unit">°C</span>
               </div>
             </div>
           </div>
-          <Forecast city={this.state.city} />
+          <div className="col-6">
+            <ul>
+              <li>Precipitation: {weatherData.precipitation}%</li>
+              <li>Humidity: {weatherData.humidity}%</li>
+              <li>Wind: {weatherData.wind} km/h</li>
+            </ul>
+          </div>
         </div>
-      );
-    } else {
-      return (
-        <div>
-          App is loading, <em>please wait...</em>
-        </div>
-      );
-    }
+      </div>
+    );
+  } else {
+    const apiKey = "be81f193e065bf5feb2d944c7336968b";
+    let apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${props.defaultCity}&appid=${apiKey}&units=metric`;
+    axios.get(apiUrl).then(handleResponse);
+
+    return "Loading...";
   }
 }
